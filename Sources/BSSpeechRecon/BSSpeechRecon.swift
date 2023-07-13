@@ -21,7 +21,7 @@ public class BSSpeechRecon: NSObject, SFSpeechRecognizerDelegate {
     private var recognitionTask: SFSpeechRecognitionTask?
     private let audioEngine = AVAudioEngine()
     
-    var stopSignal = PassthroughSubject<Void, Never>()
+    public var stopSignal = PassthroughSubject<Void, Never>()
     
     public override init() {
         super.init()
