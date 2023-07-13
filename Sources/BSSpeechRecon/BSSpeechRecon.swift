@@ -23,7 +23,7 @@ public class BSSpeechRecon: NSObject, SFSpeechRecognizerDelegate {
     
     var stopSignal = PassthroughSubject<Void, Never>()
     
-    override init() {
+    public override init() {
         super.init()
         speechRecognizer.delegate = self
 
