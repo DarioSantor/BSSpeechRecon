@@ -108,13 +108,13 @@ public class BSSpeechRecon: NSObject, SFSpeechRecognizerDelegate {
     
     /// Method to stop the listening process. Also emits a signal to inform that the service has ended.
     public func stopListening() {
-        self.audioEngine.stop()
-        self.audioEngine.inputNode.removeTap(onBus: 0)
-
-        self.recognitionRequest = nil
-        self.recognitionTask = nil
-        
-        silenceTimer?.invalidate()
+//        self.audioEngine.stop()
+//        self.audioEngine.inputNode.removeTap(onBus: 0)
+//
+//        self.recognitionRequest = nil
+//        self.recognitionTask = nil
+//        
+//        silenceTimer?.invalidate()
         stopSignal.send(())
     }
     
