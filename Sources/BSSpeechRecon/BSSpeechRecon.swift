@@ -2,7 +2,7 @@ import Foundation
 import Speech
 import Combine
 
-public class JDSpeechRecon: NSObject, SFSpeechRecognizerDelegate {
+public class BSSpeechRecon: NSObject, SFSpeechRecognizerDelegate {
     var silenceTimer: Timer?
     var cancellables = Set<AnyCancellable>()
     
