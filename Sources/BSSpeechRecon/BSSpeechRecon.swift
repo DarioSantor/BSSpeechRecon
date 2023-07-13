@@ -21,6 +21,7 @@ public class BSSpeechRecon: NSObject, SFSpeechRecognizerDelegate {
     private var recognitionTask: SFSpeechRecognitionTask?
     private let audioEngine = AVAudioEngine()
     
+    /// A variable that holds a Combine signal to get the service stop information reactively.
     public var stopSignal = PassthroughSubject<Void, Never>()
     
     public override init() {
@@ -35,6 +36,8 @@ public class BSSpeechRecon: NSObject, SFSpeechRecognizerDelegate {
             }.store(in: &cancellables)
     }
     
+    /// Method to get user speech recognition authorization.
+    /// - Returns: User's authorization status.
     public func getSpeechRecognitionPermission() -> PassthroughSubject<SFSpeechRecognizerAuthorizationStatus, Never> {
         let permissionSubject: PassthroughSubject<SFSpeechRecognizerAuthorizationStatus, Never> = .init()
         
@@ -45,14 +48,10 @@ public class BSSpeechRecon: NSObject, SFSpeechRecognizerDelegate {
         return permissionSubject
     }
     
-    private func resetSilenceTimer(shutDownTimer: Int) {
-        silenceTimer?.invalidate()
-        silenceTimer = Timer.scheduledTimer(withTimeInterval: TimeInterval(shutDownTimer), repeats: false) { [weak self] _ in
-            self?.stopSignal.send()
-        }
-    }
-
-    public func startRecording(_ shutDownTimer: Int = 3) -> AnyPublisher<String, Never> {
+    /// Method to start listening for user's speech.
+    /// - Parameter shutDownTimer: Seconds that the user can be quit without stopping the service.
+    /// - Returns: A Combine publisher that holds the user speech transcribed in a string.
+    public func startListening(_ shutDownTimer: Int = 3) -> AnyPublisher<String, Never> {
         print("Listening has started!")
         let textSpeechSubject = PassthroughSubject<String, Never>()
 
@@ -66,7 +65,7 @@ public class BSSpeechRecon: NSObject, SFSpeechRecognizerDelegate {
             if let result = result {
                 textSpeechSubject.send(result.bestTranscription.formattedString)
                 isFinal = result.isFinal
-                self.resetSilenceTimer(shutDownTimer: shutDownTimer)
+                    self.resetSilenceTimer(shutDownTimer: shutDownTimer != 0 ? shutDownTimer : 300)
             }
 
             if error != nil || isFinal {
@@ -105,5 +104,22 @@ public class BSSpeechRecon: NSObject, SFSpeechRecognizerDelegate {
 
         return silencePublisher
             .eraseToAnyPublisher()
+    }
+    
+    /// Method to stop the listening process. Also emits a signal to inform that the service has ended.
+    public func stopListening() {
+        stopSignal
+            .sink { _ in
+                self.audioEngine.stop()
+                self.recognitionRequest?.endAudio()
+                print("Listening has stopped!")
+            }.store(in: &cancellables)
+    }
+    
+    private func resetSilenceTimer(shutDownTimer: Int) {
+        silenceTimer?.invalidate()
+        silenceTimer = Timer.scheduledTimer(withTimeInterval: TimeInterval(shutDownTimer), repeats: false) { [weak self] _ in
+            self?.stopSignal.send()
+        }
     }
 }
