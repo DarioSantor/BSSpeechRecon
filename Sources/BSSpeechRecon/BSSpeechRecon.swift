@@ -45,14 +45,14 @@ public class BSSpeechRecon: NSObject, SFSpeechRecognizerDelegate {
         return permissionSubject
     }
     
-    private func resetSilenceTimer() {
+    private func resetSilenceTimer(shutDownTimer: Int) {
         silenceTimer?.invalidate()
-        silenceTimer = Timer.scheduledTimer(withTimeInterval: 5, repeats: false) { [weak self] _ in
+        silenceTimer = Timer.scheduledTimer(withTimeInterval: TimeInterval(shutDownTimer), repeats: false) { [weak self] _ in
             self?.stopSignal.send()
         }
     }
 
-    public func startRecording() -> AnyPublisher<String, Never> {
+    public func startRecording(_ shutDownTimer: Int = 3) -> AnyPublisher<String, Never> {
         print("Listening has started!")
         let textSpeechSubject = PassthroughSubject<String, Never>()
 
@@ -66,7 +66,7 @@ public class BSSpeechRecon: NSObject, SFSpeechRecognizerDelegate {
             if let result = result {
                 textSpeechSubject.send(result.bestTranscription.formattedString)
                 isFinal = result.isFinal
-                self.resetSilenceTimer()
+                self.resetSilenceTimer(shutDownTimer: shutDownTimer)
             }
 
             if error != nil || isFinal {
@@ -94,7 +94,7 @@ public class BSSpeechRecon: NSObject, SFSpeechRecognizerDelegate {
 
         let silencePublisher = textSpeechSubject
             .handleEvents(receiveSubscription: { _ in
-                self.resetSilenceTimer()
+                self.resetSilenceTimer(shutDownTimer: shutDownTimer)
             }, receiveCompletion: { _ in
                 self.silenceTimer?.invalidate()
                 self.silenceTimer = nil
