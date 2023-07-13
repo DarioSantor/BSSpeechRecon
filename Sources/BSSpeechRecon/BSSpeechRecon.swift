@@ -65,7 +65,9 @@ public class BSSpeechRecon: NSObject, SFSpeechRecognizerDelegate {
             if let result = result {
                 textSpeechSubject.send(result.bestTranscription.formattedString)
                 isFinal = result.isFinal
-                    self.resetSilenceTimer(shutDownTimer: shutDownTimer != 0 ? shutDownTimer : 300)
+                if shutDownTimer != 0 {
+                    self.resetSilenceTimer(shutDownTimer: shutDownTimer)
+                }
             }
 
             if error != nil || isFinal {
