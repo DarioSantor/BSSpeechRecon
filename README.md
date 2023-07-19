@@ -74,7 +74,7 @@ func startListening() {
 ```
 
 > The default shutdown time it's 3 seconds but you can change it passing a different value;
-> If you give the shutdown a value of 0 it it will listen for the maximum time interval allowed right now (10 minutes)
+> If you give the shutdown a value of 0 it it will listen until you invoke the stopListening() method.
 ``` swift
 speechService.startListening(_ shutDownTimer: Int)
 ```
