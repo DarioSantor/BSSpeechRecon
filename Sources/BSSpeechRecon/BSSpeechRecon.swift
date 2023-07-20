@@ -67,27 +67,11 @@ public class BSSpeechRecon: NSObject, SFSpeechRecognizerDelegate {
             }
             
             if error != nil || isFinal {
-                self.audioEngine.stop()
-                self.audioEngine.inputNode.removeTap(onBus: 0)
-                
-                self.recognitionRequest = nil
-                self.recognitionTask = nil
+                self.stopListening()
             }
         }
         
-        let recordingFormat = audioEngine.inputNode.outputFormat(forBus: 0)
-        audioEngine.inputNode.installTap(onBus: 0, bufferSize: 1024, format: recordingFormat) { [weak self] buffer, _ in
-            guard let self = self else { return }
-            self.recognitionRequest?.append(buffer)
-        }
-        
-        audioEngine.prepare()
-        
-        do {
-            try audioEngine.start()
-        } catch {
-            print("Audio engine failed to start: \(error.localizedDescription)")
-        }
+        startAudioEngine()
         
         let silencePublisher = textSpeechSubject
             .handleEvents(receiveSubscription: { _ in
@@ -106,7 +90,29 @@ public class BSSpeechRecon: NSObject, SFSpeechRecognizerDelegate {
     
     /// Method to stop the listening process. Emits a signal to inform that the service has ended.
     public func stopListening() {
+        self.audioEngine.stop()
+        self.audioEngine.inputNode.removeTap(onBus: 0)
+        
+        self.recognitionRequest = nil
+        self.recognitionTask = nil
+        
         stopSignal.send(())
+    }
+    
+    private func startAudioEngine() {
+        let recordingFormat = audioEngine.inputNode.outputFormat(forBus: 0)
+        audioEngine.inputNode.installTap(onBus: 0, bufferSize: 1024, format: recordingFormat) { [weak self] buffer, _ in
+            guard let self = self else { return }
+            self.recognitionRequest?.append(buffer)
+        }
+        
+        audioEngine.prepare()
+        
+        do {
+            try audioEngine.start()
+        } catch {
+            print("Audio engine failed to start: \(error.localizedDescription)")
+        }
     }
     
     private func resetSilenceTimer(shutDownTimer: Int) {
