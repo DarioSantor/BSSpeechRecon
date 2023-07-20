@@ -4,9 +4,8 @@ import Combine
 
 public class BSSpeechRecon: NSObject, SFSpeechRecognizerDelegate {
     private var silenceTimer: Timer?
-    private var hasReceivedVoiceInput = false
-    private var hasListeningStopped = false
     private var cancellables = Set<AnyCancellable>()
+    private var isFinal = false
     
     private let speechRecognizer: SFSpeechRecognizer = {
         if let recognizer = SFSpeechRecognizer(locale: Locale(identifier: Locale.current.identifier)),
@@ -60,15 +59,14 @@ public class BSSpeechRecon: NSObject, SFSpeechRecognizerDelegate {
         
         recognitionTask = speechRecognizer.recognitionTask(with: recognitionRequest!) { [weak self] result, error in
             guard let self = self else { return }
-            var isFinal = false
             
             if let result = result {
                 textSpeechSubject.send(result.bestTranscription.formattedString)
-                isFinal = result.isFinal
+                self.isFinal = result.isFinal
                 self.resetSilenceTimer(shutDownTimer: shutDownTimer != 0 ? shutDownTimer : 300)
             }
             
-            if error != nil || isFinal || !self.hasListeningStopped {
+            if error != nil || self.isFinal {
                 self.stopListening()
             }
         }
@@ -120,12 +118,8 @@ public class BSSpeechRecon: NSObject, SFSpeechRecognizerDelegate {
     private func resetSilenceTimer(shutDownTimer: Int) {
         silenceTimer?.invalidate()
         silenceTimer = Timer.scheduledTimer(withTimeInterval: TimeInterval(shutDownTimer), repeats: false) { [weak self] _ in
-            if self?.hasReceivedVoiceInput == true {
-                self?.hasReceivedVoiceInput = false
-            } else {
-                self?.hasListeningStopped = true
-                self?.stopListening()
-            }
+//            self?.stopListening()
+            self?.isFinal = false
         }
     }
 }
