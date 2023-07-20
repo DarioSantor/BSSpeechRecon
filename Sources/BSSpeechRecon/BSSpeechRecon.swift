@@ -3,8 +3,9 @@ import Speech
 import Combine
 
 public class BSSpeechRecon: NSObject, SFSpeechRecognizerDelegate {
-    var silenceTimer: Timer?
-    var cancellables = Set<AnyCancellable>()
+    private var silenceTimer: Timer?
+    private var hasReceivedVoiceInput = false
+    private var cancellables = Set<AnyCancellable>()
     
     private let speechRecognizer: SFSpeechRecognizer = {
         if let recognizer = SFSpeechRecognizer(locale: Locale(identifier: Locale.current.identifier)),
@@ -64,6 +65,7 @@ public class BSSpeechRecon: NSObject, SFSpeechRecognizerDelegate {
                 textSpeechSubject.send(result.bestTranscription.formattedString)
                 isFinal = result.isFinal
                 self.resetSilenceTimer(shutDownTimer: shutDownTimer != 0 ? shutDownTimer : 300)
+                self.hasReceivedVoiceInput = true
             }
             
             if error != nil || isFinal {
@@ -118,7 +120,11 @@ public class BSSpeechRecon: NSObject, SFSpeechRecognizerDelegate {
     private func resetSilenceTimer(shutDownTimer: Int) {
         silenceTimer?.invalidate()
         silenceTimer = Timer.scheduledTimer(withTimeInterval: TimeInterval(shutDownTimer), repeats: false) { [weak self] _ in
-            self?.stopSignal.send()
+            if self?.hasReceivedVoiceInput == true {
+                self?.hasReceivedVoiceInput = false
+            } else {
+                self?.stopListening()
+            }
         }
     }
 }
