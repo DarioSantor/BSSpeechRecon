@@ -5,7 +5,7 @@ import Combine
 public class BSSpeechRecon: NSObject, SFSpeechRecognizerDelegate {
     private var silenceTimer: Timer?
     private var cancellables = Set<AnyCancellable>()
-    private var isFinal = false
+    private var hasVoiceInput = false
     
     private let speechRecognizer: SFSpeechRecognizer = {
         if let recognizer = SFSpeechRecognizer(locale: Locale(identifier: Locale.current.identifier)),
@@ -59,14 +59,15 @@ public class BSSpeechRecon: NSObject, SFSpeechRecognizerDelegate {
         
         recognitionTask = speechRecognizer.recognitionTask(with: recognitionRequest!) { [weak self] result, error in
             guard let self = self else { return }
+            var isFinal = false
             
             if let result = result {
                 textSpeechSubject.send(result.bestTranscription.formattedString)
-                self.isFinal = result.isFinal
+                isFinal = result.isFinal
                 self.resetSilenceTimer(shutDownTimer: shutDownTimer != 0 ? shutDownTimer : 300)
             }
             
-            if error != nil || self.isFinal {
+            if error != nil || isFinal || self.hasVoiceInput {
                 self.stopListening()
             }
         }
@@ -119,7 +120,7 @@ public class BSSpeechRecon: NSObject, SFSpeechRecognizerDelegate {
         silenceTimer?.invalidate()
         silenceTimer = Timer.scheduledTimer(withTimeInterval: TimeInterval(shutDownTimer), repeats: false) { [weak self] _ in
 //            self?.stopListening()
-            self?.isFinal = false
+            self?.hasVoiceInput = true
         }
     }
 }
