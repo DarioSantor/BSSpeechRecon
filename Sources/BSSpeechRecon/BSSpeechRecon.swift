@@ -122,6 +122,8 @@ public class BSSpeechRecon: NSObject, SFSpeechRecognizerDelegate {
         silenceTimer = Timer.scheduledTimer(withTimeInterval: TimeInterval(shutDownTimer), repeats: false) { [weak self] _ in
             if self?.hasReceivedVoiceInput == true {
                 self?.hasReceivedVoiceInput = false
+                self?.stopListening()
+                self?.startListening(shutDownTimer)
             } else {
                 self?.stopListening()
             }
